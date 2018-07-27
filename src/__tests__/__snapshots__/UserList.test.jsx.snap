@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UserList renders correctly 1`] = `
+<table>
+  <thead>
+    <tr>
+      <td>
+        Full Name
+      </td>
+      <td>
+        Email
+      </td>
+      <td>
+        Nickname
+      </td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr
+      className="User"
+    >
+      <td>
+        Diana
+         
+        Prince
+      </td>
+      <td>
+        dianaprince@flatley.com
+      </td>
+      <td>
+        Wonder Woman
+      </td>
+    </tr>
+    <tr
+      className="User"
+    >
+      <td>
+        Bruce
+         
+        Wayne
+      </td>
+      <td>
+        brucewayne@cummerata.com
+      </td>
+      <td>
+        Batman
+      </td>
+    </tr>
+  </tbody>
+</table>
+`;
