@@ -12,9 +12,9 @@ describe("UserListContainer", () => {
     };
 
     const container = shallow(<UserListContainer {...props} />);
-    const userListComponent = container.find('UserList').length;
+    const userListComponentLength = container.find('UserList').length;
 
-    expect(userListComponent).toEqual(1)
+    expect(userListComponentLength).toEqual(1)
   });
 
   it("does not display the UserList when ther are no users", () => {
@@ -24,9 +24,9 @@ describe("UserListContainer", () => {
     };
 
     const container = shallow(<UserListContainer {...props} />);
-    const userListComponent = container.find('UserList').length;
+    const userListComponentLength = container.find('UserList').length;
 
-    expect(userListComponent).toEqual(0)
+    expect(userListComponentLength).toEqual(0)
   });
 });
 

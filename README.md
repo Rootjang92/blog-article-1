@@ -1,24 +1,17 @@
-# Using fixtures for testing a React/redux app
-
-### Intro
+I love testing because it helps me understand better the code I write. One particular problem it solves is how I expect data that I'm fetching to render. Since the same data often gets passed around to multiple functions, I find using fixtures a to be a really useful way to confirm that everything is working as expected. I've put together what I think is a practical demonstration below.
 
 Let's assume the following
 
 - We have an endpoint `GET /users`
 - We want to render a list of users with a response from the endpoint
 - We are going to use redux to manage the state of our app
-- We want to test all the things with [jest](https://jestjs.io/)
+- We want to test all the things (reducer, actions, components and containers) with [jest](https://jestjs.io/) and [enzyme](https://github.com/airbnb/enzyme)
 
-You'll need to have some familiarity with redux including 
-[async actions](https://redux.js.org/advanced/async-actions) and 
-[thunk](https://github.com/reduxjs/redux-thunk). 
-If you have trouble with the portions of this article that involve redux, the 
-[docs](https://redux.js.org/) are really well written.
-
+You'll need to have some familiarity with redux including [async actions](https://redux.js.org/advanced/async-actions) and [thunk](https://github.com/reduxjs/redux-thunk). 
+If you have trouble with the portions of this article that involve redux, the [docs](https://redux.js.org/) are really well written.
 
 ### Step 1 - Setup
-For this post you can either create your own project from
-scratch or refer to the [Github](https://github.com/davidimoore/blog-article-1) repo
+For this post you can either create your own project from scratch or refer to the [Github](https://github.com/davidimoore/blog-article-1) repo
 
 1.  Install [yarn](https://yarnpkg.com/lang/en/docs/install/#mac-stable)
 2.  Install [create-react-app](https://github.com/facebook/create-react-app)
@@ -33,8 +26,7 @@ scratch or refer to the [Github](https://github.com/davidimoore/blog-article-1) 
     
     Enzyme.configure({ adapter: new Adapter() });
     ```
-6. Last we'll add a .env file in the root of the project and add a couple of environment
-variables.
+6. Last we'll add a .env file in the root of the project and add a couple of environment variables.
     -  NODE_PATH - Makes importing files easier.
     - REACT_APP_BASE_URL - Since we often use different servers for different environments we want to set the base url 
     to whatever server we use for development. I'll be using `http://localhost:3001`
@@ -50,7 +42,7 @@ In order to fetch and render data in our app we need to answer a couple of quest
 
 Our endpoint `GET /users` returns an array of users.
 
-```json
+```
 [
   {
     "id": 1,
@@ -108,7 +100,7 @@ const UserList = () => (
 export default UserList
 ``` 
 
-let's create a snapshot test
+Let's create a a couple of tests. One tells us how many user rows we expect and the second is a snapshot test. Having these test in place early helps guide the refactoring and catches us from making any unwanted changes to the "markup" in our component.
 
 ```javascript
 // src/__tests__/UserList.test.jsx
@@ -133,14 +125,13 @@ describe("UserList", () => {
 });
 ```
 
-### Step 3 - Create our redux reducer
+### Step 3 - Create our reducer
 
 Let's take a step back and conceptualize the data flow and how things will come together.
 
 - We'll fetch some users by dispatching an action. It would be named `fetchUsers` or something similiar
 - When we receive the users we'll pass those to a users reducer
-- The users reducer will transform the data from the action into an array of users that is "shaped" 
-like the array of users we used in our test
+- The users reducer will transform the data from the action into an array of users that is "shaped" like the array of users we used in our test
 - That array of users will eventually get passed to a `UsersList` component to be rendered.
 
 Let's build a test to define our reducers behavior.
@@ -234,9 +225,10 @@ const users = (state = initialState, action) => {
 export default users;
 ```
 
-Let's also update our index.js file to use redux
+Let's also update our `index.js` file to use redux
 ```javascript
-// index.js
+// src/index.js
+
 import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
@@ -245,7 +237,7 @@ import { applyMiddleware, combineReducers, createStore } from "redux";
 
 import users from "reducers/users";
 import "./index.css";
-import App from "./components/App/App";
+import App from "./components/App";
 import registerServiceWorker from "./registerServiceWorker";
 
 const appReducer = combineReducers({
@@ -268,28 +260,8 @@ You might have noticed we are repeating ourselves in our tests
 - The `UserList` component gets a users array
 - The same users array is the result of our reducer test.
 
-```javascript
-[
-  {
-    id: 1,
-    first_name: "Diana",
-    last_name: "Prince",
-    email: "dianaprince@flatley.com",
-    nickname: "Wonder Woman"
-  },
-  {
-    id: 2,
-    first_name: "Bruce",
-    last_name: "Wayne",
-    email: "brucewayne@cummerata.com",
-    nickname: "Batman"
-  }
-]
-```
-
-Let's extract the array to a fixture. 
-You can put your fixtures whereever you want, I use a folder like `src/__fixtures__`.
-Let's refactor a bit.
+Let's extract the users array to a fixture. 
+You can put your fixtures wherever you want, I use a folder like `src/__fixtures__`.
 
 ```javascript
 // src/__fixtures__/reducedUsers.js
@@ -313,8 +285,7 @@ const reducedUsers = [
 export default reducedUsers;
 ```
 
-We are going to use the response data we get from the server in the upcoming action test as well. 
-So we should make a fixture for it too.
+We are using the response data in our reducer test and we'll use it in our user actions test later as well. So we should make a fixture for it too.
 
 ```javascript
 // src/__fixtures__/getUsersResponse.js
@@ -362,7 +333,8 @@ describe("users reducer", () => {
   });
 });
 ```
-- Let's also update our `UserList` test
+- Let's also update our `UserList` test. Again this should not require any change to our snapshot test. Simply refactoring shouldn't render things differently.
+
 ```javascript
 import React from "react";
 import { shallow } from "enzyme";
@@ -387,9 +359,8 @@ describe("UserList", () => {
 });
 ```
 
-You might be thinking, "but if I change the fixture now I have to update every test that uses it". That is 
-exactly the point. If what is returned from the reducer changes it would affect our `UserList` component. Our tests
-might break which informs us we may need to handle changes in the data.
+You might be thinking, "but if I change the fixture now I have to update every test that uses it". That is exactly the point. 
+If what is returned from the reducer changes it would affect our `UserList` component. *Our tests might break which informs us we may need to handle changes in the data*.
 
 ## Step 5 Add redux actions
 Our user actions test will make user of our getUsersResponse fixture
@@ -433,7 +404,7 @@ describe("actions", () => {
 });
 ```
 
-And our actions
+And our users actions
 ```javascript
 // actions/users.js
 import axios from "axios";
@@ -454,13 +425,14 @@ export { fetchUsers };
 ```
 
 ## Step 6 Integrate redux and react
-It's helpful to separate containers for fetching data from components for rendering the fetched data . 
-So the last major step is to create a `UserListContainer` to fetch users and pass the result on to the 
-`UsersList` component.
+It's helpful to [separate](https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0) containers for fetching data from components for rendering the fetched data . 
+So the last major step is to create a `UserListContainer` to fetch users and pass the result on to the `UsersList` component.
 
-We'll import the UserListContainer instead of the default export which is just the 
-UserListContainer wrapped with redux. Our example tests will define expected behavior for
-two scenarios. We'll also mock out our `fetchUsers` function since we don't want to actually test the endpoint.
+We'll import the `UserListContainer` instead of the default export which is the 
+`UserListContainer` wrapped with redux. We'll also mock out our `fetchUsers` 
+function since we don't want to actually test the endpoint.
+
+Our example tests will define expected behavior for two scenarios. 
 - When users were successfully fetched and passed on to the `UserList` component
 - When the users array is empty
  
@@ -493,21 +465,24 @@ describe("UserListContainer", () => {
     };
 
     const container = shallow(<UserListContainer {...props} />);
-    const userListComponent = container.find('UserList').length;
+    const userListComponentLength = container.find('UserList').length;
 
-    expect(userListComponent).toEqual(0)
+    expect(userListComponentLength).toEqual(0)
   });
 });
 ```
 
 Finally our UserListContainer
 ```javascript
+// src/containers/UserListContainer.jsx
+
 import React from "react";
 import { connect } from "react-redux";
 
 import UserList from "components/UserList";
 import * as userActions from "actions/users";
 
+// REACT_APP_BASE_URL stored in our .env file
 const GET_USERS_URL = `${process.env.REACT_APP_BASE_URL}/users.json`;
 
 export class UserListContainer extends React.Component {
@@ -562,7 +537,8 @@ export default App;
 ```
 
 ### Summary
-There are arguments for and against using fixtures in tests. They can become unweildly 
-and numerous. I believe there is a place for fixtures in addition to functions that generate
-data more dynamicaly, like factories. In a follow up article I'll continue on with how the same
-fixtures can be used with [storybook](https://github.com/storybooks/storybook).
+There are solid arguments for and against using fixtures in tests. 
+They can become unwieldily and too numerous if overused. 
+I believe there is a place for fixtures in addition to functions that generate data more dynamically, like factories. 
+In a follow up article I'll continue on with how the same fixtures can be used with 
+[storybook](https://github.com/storybooks/storybook).
